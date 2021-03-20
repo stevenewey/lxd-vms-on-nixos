@@ -93,14 +93,15 @@
 
   # the good stuff...
   virtualisation.lxd.enable = true;
-  virtualisation.lxd.zfsSupport = true;
+  virtualisation.lxd.zfsSupport = true;  # zfs is recommended
+  virtualisation.lxd.recommendedSysctlSettings = true;
   systemd.services.lxd.path = with pkgs; [
 
     # the lxd-agent in nixpkgs is dynamically linked and will fail in your guest VM!
-    # this provides a statically compiled version pulled from this repo
+    # this builds a statically compiled version
     ( import ./lxd-agent.nix )
 
-    # lxd won't find virtiofsd without making sure it's in the path
+    # lxd won't find virtiofsd or virtfs-proxy-helper without making sure they're in the path
     ( import ./virtiofsd.nix )
 
     # the lxd nixpkg doesn't know it needs kvm in its path to run qemu!
@@ -118,11 +119,8 @@
   systemd.services.lxd.environment = {
 
     # lxd will look for EFI firmware in /usr/share, but will not find it there
-    # so we need to tell it about the OVMF nixpkg
-    # Ideally, we've used OVMF-secureBoot, but this doesn't actually seem to
-    # include a signed EFI, so make sure to run:
-    #   lxc profile set default security.secureboot false
-    LXD_OVMF_PATH = "${pkgs.OVMF.fd.outPath}/FV";
+    # so we need to tell it about our metapackage
+    LXD_OVMF_PATH = ( import ./ovmf-meta.nix );
 
   };
 
